@@ -5,8 +5,15 @@ public interface AppConstants {
     String SIGNUP_URL = "/signup";
     String BASE_FORGOT_PASSWORD_URL = "/fpwd";
     String FORGOT_PASSWORD_URL = "/fpwd/**";
+    String REFRESH_TOKEN_URL = "/refresh-token";
 
     String[] ALLOWED_ENDPOINTS = {
+            LOGIN_URL,
+            SIGNUP_URL,
+            FORGOT_PASSWORD_URL,
+            REFRESH_TOKEN_URL
+    };
+    String[] CSRF_IGNORED_ENDPOINTS = {
             LOGIN_URL,
             SIGNUP_URL,
             FORGOT_PASSWORD_URL

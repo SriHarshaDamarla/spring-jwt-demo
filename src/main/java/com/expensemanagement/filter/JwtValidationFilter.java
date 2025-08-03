@@ -1,5 +1,6 @@
 package com.expensemanagement.filter;
 
+import com.expensemanagement.service.RefreshTokenMap;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -9,6 +10,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,10 +22,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import static com.expensemanagement.constants.AppConstants.*;
 
+@RequiredArgsConstructor
 public class JwtValidationFilter extends OncePerRequestFilter {
+
+    private final RefreshTokenMap refreshTokenMap;
 
     @Override
     protected void doFilterInternal(
@@ -48,6 +54,9 @@ public class JwtValidationFilter extends OncePerRequestFilter {
                             new UsernamePasswordAuthenticationToken(username,null,
                                     AuthorityUtils.commaSeparatedStringToAuthorityList(roles));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    String uuid = UUID.randomUUID().toString();
+                    refreshTokenMap.addRefreshToken(username, uuid);
+                    response.setHeader("REFRESH-TOKEN", uuid);
                 } else {
                     throw new BadCredentialsException("JWT token is missing username or roles");
                 }

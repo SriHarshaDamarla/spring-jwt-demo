@@ -1,11 +1,13 @@
 package com.expensemanagement.filter;
 
+import com.expensemanagement.service.RefreshTokenMap;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,13 +17,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.expensemanagement.constants.AppConstants.*;
 
+@RequiredArgsConstructor
 public class JwtCreationFilter extends OncePerRequestFilter {
+
+    private final RefreshTokenMap refreshTokenMap;
 
     @Override
     protected void doFilterInternal(
@@ -49,6 +54,9 @@ public class JwtCreationFilter extends OncePerRequestFilter {
                     .claim("roles", roles)
                     .signWith(secretKey).compact();
             response.setHeader("jwtToken", jwtToken);
+            String uuid = UUID.randomUUID().toString();
+            refreshTokenMap.addRefreshToken(username, uuid);
+            response.setHeader("REFRESH-TOKEN", uuid);
         }
         filterChain.doFilter(request, response);
     }

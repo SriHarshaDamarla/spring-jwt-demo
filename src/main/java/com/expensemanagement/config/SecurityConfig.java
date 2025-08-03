@@ -4,9 +4,11 @@ import com.expensemanagement.entities.Customer;
 import com.expensemanagement.filter.JwtCreationFilter;
 import com.expensemanagement.filter.JwtValidationFilter;
 import com.expensemanagement.repositories.CustomerRepo;
+import com.expensemanagement.service.RefreshTokenMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,11 +21,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
 
 import static com.expensemanagement.constants.AppConstants.ALLOWED_ENDPOINTS;
+import static com.expensemanagement.constants.AppConstants.CSRF_IGNORED_ENDPOINTS;
 
 @Configuration
 @RequiredArgsConstructor
@@ -33,6 +37,7 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain httpSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         return httpSecurity
                 .cors(corsConfig ->
                         corsConfig.configurationSource(request -> {
@@ -56,11 +61,12 @@ public class SecurityConfig {
                 )
                 .csrf(csrfConfigurer ->
                         csrfConfigurer
-                                .ignoringRequestMatchers(ALLOWED_ENDPOINTS)
+                                .ignoringRequestMatchers(CSRF_IGNORED_ENDPOINTS)
                                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                                .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
                 )
-                .addFilterBefore(new JwtValidationFilter(), BasicAuthenticationFilter.class)
-                .addFilterAfter(new JwtCreationFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new JwtValidationFilter(refreshTokenMap()), BasicAuthenticationFilter.class)
+                .addFilterAfter(new JwtCreationFilter(refreshTokenMap()), BasicAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(loc -> loc
                         .invalidateHttpSession(true)
@@ -87,6 +93,12 @@ public class SecurityConfig {
                     .password(customer.getPassword())
                     .authorities(customer.getRole()).build();
         };
+    }
+
+    @Bean
+    @Scope("singleton")
+    public RefreshTokenMap refreshTokenMap() {
+        return new RefreshTokenMap();
     }
 
 }
