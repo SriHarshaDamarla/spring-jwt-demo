@@ -19,7 +19,7 @@ public class CustomerService {
         customer.setUserId(form.getUsername());
         customer.setFirstName(form.getFirstName());
         customer.setLastName(form.getLastName());
-        customer.setRole("user");
+        customer.setRole("ROLE_SENDER");
         customer.setPassword(passwordEncoder.encode(form.getPassword()));
 
         customerRepo.save(customer);
